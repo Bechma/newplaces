@@ -1,11 +1,27 @@
 import "./style.css";
 import CanvasState from "./canvasState";
+import Api from "./api";
+import EventEmitter, {
+  DRAW_CANVAS,
+  MESSAGE_SSE,
+  SEND_PIXEL,
+} from "./eventEmitter";
 
 const canvasState = new CanvasState();
+const sse = new Api("http://127.0.0.1:8000");
 
-setUpEventListeners();
+EventEmitter.subscribe(MESSAGE_SSE, (x, y, color) =>
+  canvasState.paintPixel(x as number, y as number, color as number)
+);
+EventEmitter.subscribe(SEND_PIXEL, (x, y, color) => {
+  sse.sendPixel(x as number, y as number, color as number);
+});
+EventEmitter.subscribe(DRAW_CANVAS, (array) =>
+  canvasState.drawAllCanvas(array as ImageData)
+);
+setupCanvasEventListeners();
 
-function setUpEventListeners() {
+function setupCanvasEventListeners() {
   canvasState.camera.addEventListener("mousedown", (e) =>
     canvasState.initPan(e)
   );
@@ -25,24 +41,3 @@ function setUpEventListeners() {
   );
   canvasState.camera.addEventListener("click", () => canvasState.clickPixel());
 }
-
-function reddit(
-  ctx: CanvasRenderingContext2D,
-  location: string,
-  dx: number,
-  dy: number
-) {
-  const image = new Image();
-  image.onload = () => ctx.drawImage(image, dx, dy);
-  image.src = location;
-}
-
-function loadCanvas() {
-  const ctx = canvasState.canvas.getContext("2d")!;
-  reddit(ctx, "../img/reddit1.png", 0, 0);
-  reddit(ctx, "../img/reddit2.png", 0, 1000);
-  reddit(ctx, "../img/reddit3.png", 1000, 1000);
-  reddit(ctx, "../img/reddit4.png", 1000, 0);
-}
-
-loadCanvas();

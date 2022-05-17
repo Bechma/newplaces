@@ -1,3 +1,5 @@
+import EventEmitter, { SEND_PIXEL } from "./eventEmitter";
+
 export default class CanvasState {
   x: number;
   y: number;
@@ -9,6 +11,8 @@ export default class CanvasState {
   panStartY: number;
   clickedX: number;
   clickedY: number;
+  originalClickedX: number;
+  originalClickedY: number;
   middleX: number;
   middleY: number;
   camera: HTMLElement;
@@ -40,8 +44,8 @@ export default class CanvasState {
     this.isDragging = isDragging;
     this.panStartX = panStartX;
     this.panStartY = panStartY;
-    this.clickedX = clickedX;
-    this.clickedY = clickedY;
+    this.originalClickedX = this.clickedX = clickedX;
+    this.originalClickedY = this.clickedY = clickedY;
     this.middleX = middleX;
     this.middleY = middleY;
     this.camera = document.getElementById("camera")!;
@@ -73,10 +77,10 @@ export default class CanvasState {
    */
   panCamera(e: MouseEvent) {
     const rect = this.canvas.getBoundingClientRect();
-    this.clickedX = Math.floor((e.clientX - rect.left) / this.scale);
-    this.clickedX = Math.min(Math.max(this.clickedX, 0), 1999);
-    this.clickedY = Math.floor((e.clientY - rect.top) / this.scale);
-    this.clickedY = Math.min(Math.max(this.clickedY, 0), 1999);
+    this.originalClickedX = Math.floor((e.clientX - rect.left) / this.scale);
+    this.clickedX = Math.min(Math.max(this.originalClickedX, 0), 1999);
+    this.originalClickedY = Math.floor((e.clientY - rect.top) / this.scale);
+    this.clickedY = Math.min(Math.max(this.originalClickedY, 0), 1999);
 
     this.middleX = Math.floor(
       (this.camera.offsetWidth / 2 - rect.left) / this.scale
@@ -105,7 +109,7 @@ export default class CanvasState {
       if (this.scale * factor > 35) factor = 35 / this.scale;
     } else {
       factor = 1 / scrollRatio; // zoom out is inverse of zoom in
-      if (this.scale * factor < 0.2) factor = 0.2 / this.scale;
+      if (this.scale * factor < 0.5) factor = 0.5 / this.scale;
     }
     // TODO: Fix camera jumps and zoom in to the border of the canvas, not outside
     this.scale *= factor;
@@ -115,9 +119,15 @@ export default class CanvasState {
   }
 
   clickPixel() {
-    if (this.initialX == this.x && this.initialY == this.y) {
-      this.ctx.fillStyle = "rgba(130,130,130,1)";
-      this.ctx.fillRect(this.clickedX, this.clickedY, 1, 1);
+    if (
+      this.initialX == this.x &&
+      this.initialY == this.y &&
+      this.originalClickedY >= 0 &&
+      this.originalClickedY < 2000 &&
+      this.originalClickedX >= 0 &&
+      this.originalClickedX < 2000
+    ) {
+      EventEmitter.emit(SEND_PIXEL, this.clickedX, this.clickedY, 0x10101010);
     }
   }
 
@@ -127,6 +137,19 @@ export default class CanvasState {
    */
   setDragging(value: boolean) {
     this.isDragging = value;
+  }
+
+  paintPixel(x: number, y: number, color: number) {
+    const r = (color >> 24) & 0xff;
+    const g = (color >> 16) & 0xff;
+    const b = (color >> 8) & 0xff;
+    const a = color & 0xff;
+    this.ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+    this.ctx.fillRect(x, y, 1, 1);
+  }
+
+  drawAllCanvas(ab: ImageData) {
+    this.ctx.putImageData(ab, 0, 0);
   }
 
   /**

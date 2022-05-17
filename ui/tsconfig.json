@@ -8,12 +8,9 @@
       "DOM"
     ],
     "allowJs": false,
-    "moduleResolution": "NodeNext",
     "strict": true,
     "sourceMap": true,
-    "resolveJsonModule": true,
     "isolatedModules": true,
-    "esModuleInterop": true,
     "noEmit": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
