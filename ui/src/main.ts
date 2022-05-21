@@ -8,7 +8,7 @@ import EventEmitter, {
 } from "./eventEmitter";
 
 const canvasState = new CanvasState();
-const sse = new Api("http://127.0.0.1:8000");
+const sse = new Api("http://127.0.0.1:8080");
 
 EventEmitter.subscribe(MESSAGE_SSE, (x, y, color) =>
   canvasState.paintPixel(x as number, y as number, color as number)
