@@ -1,4 +1,5 @@
 import EventEmitter, { SEND_PIXEL } from "./eventEmitter";
+import { numberToRgba } from "./utils";
 
 export default class CanvasState {
   x: number;
@@ -140,11 +141,7 @@ export default class CanvasState {
   }
 
   paintPixel(x: number, y: number, color: number) {
-    const r = (color >> 24) & 0xff;
-    const g = (color >> 16) & 0xff;
-    const b = (color >> 8) & 0xff;
-    const a = color & 0xff;
-    this.ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+    this.ctx.fillStyle = numberToRgba(color);
     this.ctx.fillRect(x, y, 1, 1);
   }
 

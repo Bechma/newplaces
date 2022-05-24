@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 )
 
@@ -13,12 +14,29 @@ type Pixel struct {
 	Color uint32 `json:"color"`
 }
 
-var db = make(map[string]string)
+var palette = []uint32{
+	0xFFFFFFFF, // white
+	0xE4E4E4FF, // light grey
+	0x888888FF, // grey
+	0x222222FF, // black
+	0xFFA7D1FF, // pink
+	0xE50000FF, // red
+	0xE59500FF, // orange
+	0xA06A42FF, // brown
+	0xE5D900FF, // yellow
+	0x94E044FF, // lime
+	0x02BE01FF, // green
+	0x00D3DDFF, // cyan
+	0x0083C7FF, // blue
+	0x0000EAFF, // dark blue
+	0xCF6EE4FF, // magenta
+	0x820080FF, // purple
+}
 
 func setupRouter() *gin.Engine {
-	database, e := NewDatabase("localhost:6379")
+	database, e := NewDatabase("127.0.0.1:6379")
 	if e != nil {
-		log.Fatal(e)
+		log.Fatal(e.Error())
 		return nil
 	}
 	broker := NewBroker()
@@ -27,6 +45,8 @@ func setupRouter() *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	r := gin.Default()
+
+	r.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	r.StaticFile("/", "ui/dist/index.html")
 	r.StaticFile("/index.html", "ui/dist/index.html")
@@ -40,6 +60,16 @@ func setupRouter() *gin.Engine {
 		if err := c.ShouldBindJSON(&px); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
+		}
+		found := false
+		for _, val := range palette {
+			if val == px.Color {
+				found = true
+				break
+			}
+		}
+		if !found {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "bad color"})
 		}
 		if err := database.SetPixel(px.X, px.Y, px.Color); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -63,52 +93,20 @@ func setupRouter() *gin.Engine {
 			case <-clientGone:
 				log.Println("Client disconnected")
 				return
-			case msg := <-messageChannel:
-				log.Printf("Message received: %s", msg)
-				c.SSEvent("message", msg)
-				c.Writer.Flush()
+			case msg, ok := <-messageChannel:
+				if ok {
+					log.Printf("Message received: %s", msg)
+					c.SSEvent("message", msg)
+					c.Writer.Flush()
+				} else {
+					return
+				}
 			}
 		}
 	})
 
-	// Ping test
-	r.GET("/ping", func(c *gin.Context) {
-		c.String(http.StatusOK, "pong")
-	})
-
-	// Authorized group (uses gin.BasicAuth() middleware)
-	// Same than:
-	// authorized := r.Group("/")
-	// authorized.Use(gin.BasicAuth(gin.Credentials{
-	//	  "foo":  "bar",
-	//	  "manu": "123",
-	//}))
-	authorized := r.Group("/", gin.BasicAuth(gin.Accounts{
-		"foo":  "bar", // user:foo password:bar
-		"manu": "123", // user:manu password:123
-	}))
-
-	/* example curl for /admin with basicauth header
-	   Zm9vOmJhcg== is base64("foo:bar")
-
-		curl -X POST \
-	  	http://localhost:8080/admin \
-	  	-H 'authorization: Basic Zm9vOmJhcg==' \
-	  	-H 'content-type: application/json' \
-	  	-d '{"value":"bar"}'
-	*/
-	authorized.POST("admin", func(c *gin.Context) {
-		user := c.MustGet(gin.AuthUserKey).(string)
-
-		// Parse JSON
-		var json struct {
-			Value string `json:"value" binding:"required"`
-		}
-
-		if c.Bind(&json) == nil {
-			db[user] = json.Value
-			c.JSON(http.StatusOK, gin.H{"status": "ok"})
-		}
+	r.GET("/palette", func(c *gin.Context) {
+		c.JSON(http.StatusOK, palette)
 	})
 
 	return r
@@ -117,5 +115,7 @@ func setupRouter() *gin.Engine {
 func main() {
 	r := setupRouter()
 	// Listen and Server in 0.0.0.0:8080
-	_ = r.Run(":8080")
+	if err := r.Run(":8080"); err != nil {
+		log.Fatal(err.Error())
+	}
 }

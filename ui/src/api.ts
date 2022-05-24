@@ -1,4 +1,8 @@
-import EventEmitter, { DRAW_CANVAS, MESSAGE_SSE } from "./eventEmitter";
+import EventEmitter, {
+  DRAW_CANVAS,
+  MESSAGE_SSE,
+  SETUP_PALETTE,
+} from "./eventEmitter";
 
 export default class Api {
   eventSource!: EventSource;
@@ -53,6 +57,18 @@ export default class Api {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*",
       },
+    });
+  }
+
+  getPalette() {
+    fetch(new Request(this.url + "/palette"), {
+      headers: {
+        Accept: "application/json",
+      },
+    }).then((res) => {
+      res.json().then((res) => {
+        EventEmitter.emit(SETUP_PALETTE, res);
+      });
     });
   }
 }

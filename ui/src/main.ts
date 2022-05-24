@@ -5,10 +5,13 @@ import EventEmitter, {
   DRAW_CANVAS,
   MESSAGE_SSE,
   SEND_PIXEL,
+  SETUP_PALETTE,
 } from "./eventEmitter";
+import Palette from "./palette";
 
 const canvasState = new CanvasState();
 const sse = new Api("http://127.0.0.1:8080");
+const palette = new Palette();
 
 EventEmitter.subscribe(MESSAGE_SSE, (x, y, color) =>
   canvasState.paintPixel(x as number, y as number, color as number)
@@ -19,6 +22,10 @@ EventEmitter.subscribe(SEND_PIXEL, (x, y, color) => {
 EventEmitter.subscribe(DRAW_CANVAS, (array) =>
   canvasState.drawAllCanvas(array as ImageData)
 );
+EventEmitter.subscribe(SETUP_PALETTE, (array) =>
+  palette.setUp(array as number[])
+);
+sse.getPalette();
 setupCanvasEventListeners();
 
 function setupCanvasEventListeners() {

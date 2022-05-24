@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"errors"
-
+	"fmt"
 	"github.com/go-redis/redis/v8"
 )
 
@@ -30,7 +30,14 @@ func NewDatabase(address string) (*Database, error) {
 		return nil, err
 	}
 	if len(bytes) != 16_000_000 {
-		return nil, errors.New("wrong canvas length")
+		//for i := 0; i < 4_000_000; i += 4 {
+		//	_, err = client.BitField(Ctx, CanvasName, "SET", "u32", 32*i, -1, "SET", "u32", 32*(i+1), -1, "SET", "u32", 32*(i+2), -1, "SET", "u32", 32*(i+3), -1).Result()
+		//	if err != nil {
+		//		log.Fatal(err.Error())
+		//	}
+		//	log.Printf("Pixels remaining: %d / 4_000_000", i)
+		//}
+		return nil, fmt.Errorf("wrong canvas length: %d", len(bytes))
 	}
 	return &Database{Client: client, Canvas: bytes}, nil
 }
