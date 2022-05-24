@@ -49,7 +49,6 @@ func setupRouter() *gin.Engine {
 	r.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	r.StaticFile("/", "ui/dist/index.html")
-	r.StaticFile("/index.html", "ui/dist/index.html")
 	r.Static("/assets", "ui/dist/assets")
 
 	r.GET("/canvas", func(c *gin.Context) {

@@ -2,6 +2,7 @@ import "./style.css";
 import CanvasState from "./canvasState";
 import Api from "./api";
 import EventEmitter, {
+  COLOR_CHOOSER,
   DRAW_CANVAS,
   MESSAGE_SSE,
   SEND_PIXEL,
@@ -25,6 +26,7 @@ EventEmitter.subscribe(DRAW_CANVAS, (array) =>
 EventEmitter.subscribe(SETUP_PALETTE, (array) =>
   palette.setUp(array as number[])
 );
+EventEmitter.subscribe(COLOR_CHOOSER, (a) => canvasState.setColor(a as number));
 sse.getPalette();
 setupCanvasEventListeners();
 
@@ -47,4 +49,7 @@ function setupCanvasEventListeners() {
     { passive: false }
   );
   canvasState.camera.addEventListener("click", () => canvasState.clickPixel());
+  document
+    .getElementById("deselect")!
+    .addEventListener("click", () => canvasState.hidePx());
 }

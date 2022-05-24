@@ -3,7 +3,8 @@ type func = (...args: unknown[]) => void;
 export const DRAW_CANVAS = "DRAW_CANVAS",
   MESSAGE_SSE = "MESSAGE_SSE",
   SEND_PIXEL = "SEND_PIXEL",
-  SETUP_PALETTE = "SETUP_PALETTE";
+  SETUP_PALETTE = "SETUP_PALETTE",
+  COLOR_CHOOSER = "COLOR_CHOOSER";
 
 export default class EventEmitter {
   static map: { [key: string]: func } = {};

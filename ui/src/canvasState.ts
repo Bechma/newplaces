@@ -4,6 +4,7 @@ import { numberToRgba } from "./utils";
 export default class CanvasState {
   x: number;
   y: number;
+  color: number;
   scale: number;
   initialX: number;
   initialY: number;
@@ -22,10 +23,12 @@ export default class CanvasState {
   selectedPixel: HTMLElement;
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
+  px: HTMLElement;
 
   constructor(
     x = 0,
     y = 0,
+    color = 0,
     scale = 1,
     initialX = 0,
     initialY = 0,
@@ -39,6 +42,7 @@ export default class CanvasState {
   ) {
     this.x = x;
     this.y = y;
+    this.color = color;
     this.scale = scale;
     this.initialX = initialX;
     this.initialY = initialY;
@@ -55,6 +59,7 @@ export default class CanvasState {
     this.selectedPixel = document.getElementById("pixel")!;
     this.canvas = document.getElementById("canvas")! as HTMLCanvasElement;
     this.ctx = this.canvas.getContext("2d")!;
+    this.px = document.getElementById("pixel")!;
   }
 
   /**
@@ -119,6 +124,9 @@ export default class CanvasState {
     this.updateCamera();
   }
 
+  /**
+   * If it's a valid pixel, we send the pixel along with the color to the api
+   */
   clickPixel() {
     if (
       this.initialX == this.x &&
@@ -126,9 +134,10 @@ export default class CanvasState {
       this.originalClickedY >= 0 &&
       this.originalClickedY < 2000 &&
       this.originalClickedX >= 0 &&
-      this.originalClickedX < 2000
+      this.originalClickedX < 2000 &&
+      this.px.style.display != "none"
     ) {
-      EventEmitter.emit(SEND_PIXEL, this.clickedX, this.clickedY, 0x10101010);
+      EventEmitter.emit(SEND_PIXEL, this.clickedX, this.clickedY, this.color);
     }
   }
 
@@ -138,6 +147,20 @@ export default class CanvasState {
    */
   setDragging(value: boolean) {
     this.isDragging = value;
+  }
+
+  /**
+   * Set the color of the pixel that we want to draw
+   * @param color
+   */
+  setColor(color: number) {
+    this.color = color;
+    this.px.style.display = "block";
+    this.px.style.backgroundColor = numberToRgba(color);
+  }
+
+  hidePx() {
+    this.px.style.display = "none";
   }
 
   paintPixel(x: number, y: number, color: number) {

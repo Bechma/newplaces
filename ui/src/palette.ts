@@ -1,4 +1,5 @@
 import { numberToRgba } from "./utils";
+import EventEmitter, { COLOR_CHOOSER } from "./eventEmitter";
 
 export default class Palette {
   palette: HTMLElement;
@@ -12,6 +13,7 @@ export default class Palette {
       const elem = document.createElement("div");
       elem.className = "picker";
       elem.style.background = numberToRgba(a);
+      elem.onclick = () => EventEmitter.emit(COLOR_CHOOSER, a);
       this.palette.appendChild(elem);
     });
   }

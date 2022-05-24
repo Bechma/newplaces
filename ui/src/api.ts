@@ -22,7 +22,7 @@ export default class Api {
 
   async onopen(ev: Event) {
     console.log("Connected", ev);
-    const response = await fetch(new Request(this.url + "/canvas"), {
+    const response = await fetch(this.url + "/canvas", {
       headers: {
         Accept: "application/octet-stream",
       },
@@ -50,18 +50,17 @@ export default class Api {
 
   sendPixel(x: number, y: number, color: number) {
     // TODO: Show the user whether the request has been ok
-    fetch(new Request(this.url + "/pixel"), {
+    fetch(this.url + "/pixel", {
       method: "POST",
       body: JSON.stringify({ x, y, color }),
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
       },
     });
   }
 
   getPalette() {
-    fetch(new Request(this.url + "/palette"), {
+    fetch(this.url + "/palette", {
       headers: {
         Accept: "application/json",
       },
