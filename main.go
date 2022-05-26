@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 
@@ -34,7 +35,7 @@ var palette = []uint32{
 }
 
 func setupRouter() *gin.Engine {
-	database, e := NewDatabase("127.0.0.1:6379")
+	database, e := NewDatabase(*redis_address)
 	if e != nil {
 		log.Fatal(e.Error())
 		return nil
@@ -42,8 +43,6 @@ func setupRouter() *gin.Engine {
 	broker := NewBroker()
 	go broker.Start()
 
-	// Disable Console Color
-	// gin.DisableConsoleColor()
 	r := gin.Default()
 
 	r.Use(gzip.Gzip(gzip.DefaultCompression))
@@ -111,7 +110,17 @@ func setupRouter() *gin.Engine {
 	return r
 }
 
+var (
+	reset         = flag.Bool("reset", false, "Reset the canvas to all white")
+	redis_address = flag.String("redis", "127.0.0.1:6379", "redis address")
+)
+
 func main() {
+	flag.Parse()
+	if *reset {
+		ResetCanvas(*redis_address)
+		return
+	}
 	r := setupRouter()
 	// Listen and Server in 0.0.0.0:8080
 	if err := r.Run(":8080"); err != nil {

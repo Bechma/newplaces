@@ -14,7 +14,7 @@ export default class Api {
   }
 
   init() {
-    this.eventSource = new EventSource(this.url + "/events");
+    this.eventSource = new EventSource(this.url + "events");
     this.eventSource.onopen = async (ev) => await this.onopen(ev);
     this.eventSource.onerror = (ev) => this.onerror(ev);
     this.eventSource.onmessage = (ev) => this.onmessage(ev);
@@ -22,7 +22,7 @@ export default class Api {
 
   async onopen(ev: Event) {
     console.log("Connected", ev);
-    const response = await fetch(this.url + "/canvas", {
+    const response = await fetch(this.url + "canvas", {
       headers: {
         Accept: "application/octet-stream",
       },
@@ -50,7 +50,7 @@ export default class Api {
 
   sendPixel(x: number, y: number, color: number) {
     // TODO: Show the user whether the request has been ok
-    fetch(this.url + "/pixel", {
+    fetch(this.url + "pixel", {
       method: "POST",
       body: JSON.stringify({ x, y, color }),
       headers: {
@@ -60,7 +60,7 @@ export default class Api {
   }
 
   getPalette() {
-    fetch(this.url + "/palette", {
+    fetch(this.url + "palette", {
       headers: {
         Accept: "application/json",
       },

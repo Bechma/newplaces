@@ -11,7 +11,7 @@ import EventEmitter, {
 import Palette from "./palette";
 
 const canvasState = new CanvasState();
-const sse = new Api("http://127.0.0.1:8080");
+const sse = new Api(import.meta.env.VITE_API_URL);
 const palette = new Palette();
 
 EventEmitter.subscribe(MESSAGE_SSE, (x, y, color) =>
