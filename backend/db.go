@@ -1,30 +1,29 @@
-package main
+package backend
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"github.com/go-redis/redis/v8"
 	"log"
+
+	"github.com/go-redis/redis/v8"
 )
 
-// Database holds the redis client and the canvas
+// Database holds the redis client and the canvas cached for new requests
 type Database struct {
-	Client *redis.Client
+	Client redis.Cmdable
 	// Canvas cached from redis, so we don't need to get it for every new client
 	Canvas []byte
 }
 
-const CanvasName = "newplaces"
+const (
+	CanvasName   = "newplaces"
+	CanvasWidth  = 2_000
+	CanvasHeight = 2_000
+	TotalPixels  = CanvasWidth * CanvasHeight
+	TotalBytes   = TotalPixels * 4
+)
 
-var Ctx = context.TODO()
-
-func NewDatabase(address string) (*Database, error) {
-	client := redis.NewClient(&redis.Options{
-		Addr:     address,
-		Password: "",
-		DB:       0,
-	})
+func NewDatabase(client redis.Cmdable) (*Database, error) {
 	if err := client.Ping(Ctx).Err(); err != nil {
 		return nil, err
 	}
@@ -32,7 +31,7 @@ func NewDatabase(address string) (*Database, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(bytes) != 16_000_000 {
+	if len(bytes) != TotalBytes {
 
 		return nil, fmt.Errorf("wrong canvas length: %d", len(bytes))
 	}
@@ -50,7 +49,7 @@ func ResetCanvas(address string) {
 		log.Fatal(err.Error())
 	}
 	log.Println("Resetting canvas")
-	for i := 0; i < 4_000_000; i += 4 {
+	for i := 0; i < TotalPixels; i += 4 {
 		_, err := client.BitField(Ctx, CanvasName,
 			"SET", "u32", 32*i, -1,
 			"SET", "u32", 32*(i+1), -1,
@@ -66,13 +65,13 @@ func ResetCanvas(address string) {
 
 // SetPixel sets the pixel in either redis and the cached Canvas
 func (d *Database) SetPixel(x, y, color uint32) error {
-	if x < 0 || x >= 2000 {
+	if x < 0 || x >= CanvasWidth {
 		return errors.New("x must be in 0 <= x < 2000 range")
 	}
-	if y < 0 || y >= 2000 {
+	if y < 0 || y >= CanvasHeight {
 		return errors.New("y must be in 0 <= y < 2000 range")
 	}
-	position := y*2000 + x
+	position := y*CanvasHeight + x
 	if _, err := d.Client.BitField(Ctx, CanvasName, "SET", "u32", 32*position, color).Result(); err != nil {
 		return err
 	}

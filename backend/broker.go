@@ -1,4 +1,4 @@
-package main
+package backend
 
 type Broker struct {
 	stopCh    chan bool
@@ -10,9 +10,9 @@ type Broker struct {
 func NewBroker() *Broker {
 	return &Broker{
 		stopCh:    make(chan bool),
-		publishCh: make(chan Pixel, 1),
-		subCh:     make(chan chan Pixel, 1),
-		unsubCh:   make(chan chan Pixel, 1),
+		publishCh: make(chan Pixel, 100),
+		subCh:     make(chan chan Pixel, 10),
+		unsubCh:   make(chan chan Pixel, 10),
 	}
 }
 
