@@ -3,7 +3,7 @@ package backend
 import "context"
 
 var (
-	Ctx     = context.TODO()
+	ctx     = context.TODO()
 	palette = []uint32{
 		0xFFFFFFFF, // white
 		0xE4E4E4FF, // light grey

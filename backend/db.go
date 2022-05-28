@@ -10,6 +10,7 @@ import (
 
 // Database holds the redis client and the canvas cached for new requests
 type Database struct {
+	// Client from redis server
 	Client redis.Cmdable
 	// Canvas cached from redis, so we don't need to get it for every new client
 	Canvas []byte
@@ -23,34 +24,29 @@ const (
 	TotalBytes   = TotalPixels * 4
 )
 
+// NewDatabase checks the connection with redis and caches the canvas with prior length checks.
 func NewDatabase(client redis.Cmdable) (*Database, error) {
-	if err := client.Ping(Ctx).Err(); err != nil {
+	if err := client.Ping(ctx).Err(); err != nil {
 		return nil, err
 	}
-	bytes, err := client.Get(Ctx, CanvasName).Bytes()
+	bytes, err := client.Get(ctx, CanvasName).Bytes()
 	if err != nil {
 		return nil, err
 	}
 	if len(bytes) != TotalBytes {
-
 		return nil, fmt.Errorf("wrong canvas length: %d", len(bytes))
 	}
 	return &Database{Client: client, Canvas: bytes}, nil
 }
 
-// ResetCanvas set all canvas to white
-func ResetCanvas(address string) {
-	client := redis.NewClient(&redis.Options{
-		Addr:     address,
-		Password: "",
-		DB:       0,
-	})
-	if err := client.Ping(Ctx).Err(); err != nil {
+// ResetCanvas set the canvas to all white
+func ResetCanvas(client redis.Cmdable) {
+	if err := client.Ping(ctx).Err(); err != nil {
 		log.Fatal(err.Error())
 	}
 	log.Println("Resetting canvas")
 	for i := 0; i < TotalPixels; i += 4 {
-		_, err := client.BitField(Ctx, CanvasName,
+		_, err := client.BitField(ctx, CanvasName,
 			"SET", "u32", 32*i, -1,
 			"SET", "u32", 32*(i+1), -1,
 			"SET", "u32", 32*(i+2), -1,
@@ -63,7 +59,7 @@ func ResetCanvas(address string) {
 	}
 }
 
-// SetPixel sets the pixel in either redis and the cached Canvas
+// SetPixel sets the pixel in either redis(persistence) and Canvas(mem cache)
 func (d *Database) SetPixel(x, y, color uint32) error {
 	if x < 0 || x >= CanvasWidth {
 		return errors.New("x must be in 0 <= x < 2000 range")
@@ -72,7 +68,7 @@ func (d *Database) SetPixel(x, y, color uint32) error {
 		return errors.New("y must be in 0 <= y < 2000 range")
 	}
 	position := y*CanvasHeight + x
-	if _, err := d.Client.BitField(Ctx, CanvasName, "SET", "u32", 32*position, color).Result(); err != nil {
+	if _, err := d.Client.BitField(ctx, CanvasName, "SET", "u32", 32*position, color).Result(); err != nil {
 		return err
 	}
 	position *= 4

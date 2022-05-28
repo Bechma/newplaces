@@ -1,5 +1,7 @@
 package backend
 
+import "log"
+
 type Broker struct {
 	stopCh    chan bool
 	publishCh chan Pixel
@@ -27,6 +29,7 @@ func (b *Broker) Start() {
 		case msgCh := <-b.unsubCh:
 			delete(subs, msgCh)
 		case msg := <-b.publishCh:
+			log.Printf("Sending: %+v", msg)
 			for msgCh := range subs {
 				// msgCh is buffered, use non-blocking send to protect the broker:
 				select {

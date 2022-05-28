@@ -59,7 +59,8 @@ func setPixel(db *Database, broker *Broker) func(*gin.Context) {
 			}
 		}
 		if !found {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "bad color"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "bad color value"})
+			return
 		}
 		if err := db.SetPixel(px.X, px.Y, px.Color); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -87,7 +88,6 @@ func sendEvents(broker *Broker) func(ctx *gin.Context) {
 				return
 			case msg, ok := <-messageChannel:
 				if ok {
-					log.Printf("Message received: %q", msg)
 					c.SSEvent("message", msg)
 					c.Writer.Flush()
 				} else {

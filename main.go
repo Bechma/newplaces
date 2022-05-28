@@ -15,11 +15,11 @@ var (
 
 func main() {
 	flag.Parse()
+	redisClient := redis.NewClient(&redis.Options{Addr: *redisAddress})
 	if *reset {
-		backend.ResetCanvas(*redisAddress)
+		backend.ResetCanvas(redisClient)
 		return
 	}
-	redisClient := redis.NewClient(&redis.Options{Addr: *redisAddress})
 	r, err := backend.SetupRouter(redisClient)
 	if err != nil {
 		log.Fatal(err.Error())
