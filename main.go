@@ -4,8 +4,8 @@ import (
 	"flag"
 	"log"
 
+	"github.com/Bechma/newplaces/backend"
 	"github.com/go-redis/redis/v8"
-	"newplaces/backend"
 )
 
 var (

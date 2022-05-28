@@ -1,4 +1,4 @@
-module newplaces
+module github.com/Bechma/newplaces
 
 go 1.18
 
