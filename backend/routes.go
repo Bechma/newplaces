@@ -78,6 +78,7 @@ func sendEvents(broker *Broker) func(ctx *gin.Context) {
 		defer broker.Unsubscribe(messageChannel)
 		clientGone := c.Writer.CloseNotify()
 		// Handshake to fire up the connect event in the browser
+		c.Writer.WriteHeader(http.StatusOK)
 		c.Writer.Header().Set("Content-Type", "text/event-stream")
 		c.Writer.Header().Set("Cache-Control", "no-cache")
 		c.Writer.Flush()

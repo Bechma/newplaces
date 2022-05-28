@@ -14,6 +14,56 @@ import (
 	"github.com/go-redis/redismock/v8"
 )
 
+type sseRecorder struct {
+	*httptest.ResponseRecorder
+	closeNotify chan bool
+}
+
+func (s *sseRecorder) CloseNotify() <-chan bool {
+	return s.closeNotify
+}
+
+func (s *sseRecorder) close() {
+	s.closeNotify <- true
+}
+
+func TestEvents(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	broker := NewBroker()
+	router.GET("/events", sendEvents(broker))
+	record := &sseRecorder{httptest.NewRecorder(), make(chan bool)}
+	req := httptest.NewRequest(http.MethodGet, "/events", nil)
+	go broker.Start()
+	go router.ServeHTTP(record, req)
+	for !record.Flushed {
+	}
+	if record.Code != http.StatusOK {
+		t.Fatal("Bad status code on connect:", record.Code)
+	}
+	if l := record.Body.Bytes(); len(l) != 0 {
+		t.Fatal("Received some bytes on connect:", l)
+	}
+	record.Flushed = false
+	broker.Publish(Pixel{1, 2, 3})
+	for !record.Flushed {
+	}
+
+	if record.Code != http.StatusOK {
+		t.Fatal("Bad status code on message:", record.Code)
+	}
+	response := record.Body.Bytes()
+	s := string(response)
+	var px Pixel
+	if err := json.Unmarshal(response[strings.Index(s, "{"):], &px); err != nil {
+		t.Logf("Message: %v", string(response))
+		t.Fatal("Received invalid pixel:", err)
+	}
+	record.close()
+	broker.Stop()
+}
+
+// TestRoutes all but SSE endpoint that needs to be tested separated
 func TestRoutes(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	db, mock := redismock.NewClientMock()
@@ -137,7 +187,7 @@ func TestRoutes(t *testing.T) {
 }
 
 func expectedCanvas(recorder *httptest.ResponseRecorder) error {
-	if recorder.Code != 200 {
+	if recorder.Code != http.StatusOK {
 		return errors.New("bad status code")
 	}
 	if len(recorder.Body.Bytes()) != TotalBytes {
@@ -147,7 +197,7 @@ func expectedCanvas(recorder *httptest.ResponseRecorder) error {
 }
 
 func expectedPalette(recorder *httptest.ResponseRecorder) error {
-	if recorder.Code != 200 {
+	if recorder.Code != http.StatusOK {
 		return errors.New("bad status code")
 	}
 	if ct := recorder.Header().Get("Content-Type"); ct != "application/json; charset=utf-8" {
@@ -180,9 +230,8 @@ func expectedWrongPixel(recorder *httptest.ResponseRecorder) error {
 }
 
 func expectedSuccess(recorder *httptest.ResponseRecorder) error {
-	body := recorder.Body.String()
-	if recorder.Code != http.StatusOK || body != "OK" {
-		return fmt.Errorf("it should return StatusOK, but returned %d, %s", recorder.Code, body)
+	if recorder.Code != http.StatusOK {
+		return fmt.Errorf("it should return StatusOK, but returned %d", recorder.Code)
 	}
 	return nil
 }
