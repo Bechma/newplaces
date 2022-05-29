@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -14,13 +15,17 @@ func main() {
 		log.Fatal("You need to specify a redis address")
 	}
 	redisPassword := os.Getenv("NEWPLACES_REDIS_PASSWORD")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 	redisClient := redis.NewClient(&redis.Options{Addr: redisAddress, Password: redisPassword})
 	r, err := backend.SetupRouter(redisClient)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 	// Listen and Server in 0.0.0.0:8080
-	if err = r.Run(":8080"); err != nil {
+	if err = r.Run(fmt.Sprintf(":%s", port)); err != nil {
 		log.Fatal(err.Error())
 	}
 }
