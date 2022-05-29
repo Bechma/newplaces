@@ -21,7 +21,11 @@ func SetupRouter(redisClient redis.Cmdable) (*gin.Engine, error) {
 	r := gin.Default()
 
 	r.Use(gzip.Gzip(gzip.DefaultCompression))
-	r.Use(cors.Default())
+	if gin.Mode() != gin.ReleaseMode {
+		r.Use(cors.Default())
+	}
+	r.StaticFile("/", "ui/dist/index.html")
+	r.Static("/assets", "ui/dist/assets")
 
 	r.GET("/canvas", getCanvas(database))
 	r.POST("/pixel", setPixel(database, broker))
