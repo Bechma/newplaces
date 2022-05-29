@@ -47,7 +47,7 @@ a {
 #palette {
     width: 100%;
     flex-grow: 1;
-    background-color: darkgoldenrod;
+    background: rgba(100, 94, 59, 0.5);
     display: flex;
     flex-direction: row;
     justify-content: space-evenly;
@@ -56,14 +56,12 @@ a {
 }
 
 #deselect {
-    width: 50px;
-    height: 50px;
-    z-index: 123;
+    border: none;
 }
 
 .picker {
     width: 50px;
     height: 50px;
-    border: 2px;
+    border: 2px solid black;
     z-index: 123;
 }
