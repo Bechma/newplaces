@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
@@ -20,9 +21,7 @@ func SetupRouter(redisClient redis.Cmdable) (*gin.Engine, error) {
 	r := gin.Default()
 
 	r.Use(gzip.Gzip(gzip.DefaultCompression))
-
-	r.StaticFile("/", "ui/dist/index.html")
-	r.Static("/assets", "ui/dist/assets")
+	r.Use(cors.Default())
 
 	r.GET("/canvas", getCanvas(database))
 	r.POST("/pixel", setPixel(database, broker))
@@ -85,7 +84,9 @@ func sendEvents(broker *Broker) func(ctx *gin.Context) {
 		for {
 			select {
 			case <-clientGone:
-				log.Println("Client disconnected")
+				if gin.Mode() != gin.ReleaseMode {
+					log.Println("Client disconnected")
+				}
 				return
 			case msg, ok := <-messageChannel:
 				if ok {

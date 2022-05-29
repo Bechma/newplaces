@@ -3,7 +3,6 @@ package backend
 import (
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/go-redis/redis/v8"
 )
@@ -37,26 +36,6 @@ func NewDatabase(client redis.Cmdable) (*Database, error) {
 		return nil, fmt.Errorf("wrong canvas length: %d", len(bytes))
 	}
 	return &Database{Client: client, Canvas: bytes}, nil
-}
-
-// ResetCanvas set the canvas to all white
-func ResetCanvas(client redis.Cmdable) {
-	if err := client.Ping(ctx).Err(); err != nil {
-		log.Fatal(err.Error())
-	}
-	log.Println("Resetting canvas")
-	for i := 0; i < TotalPixels; i += 4 {
-		_, err := client.BitField(ctx, CanvasName,
-			"SET", "u32", 32*i, -1,
-			"SET", "u32", 32*(i+1), -1,
-			"SET", "u32", 32*(i+2), -1,
-			"SET", "u32", 32*(i+3), -1,
-		).Result()
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-		log.Printf("Pixels remaining: %d / 4_000_000", i)
-	}
 }
 
 // SetPixel sets the pixel in either redis(persistence) and Canvas(mem cache)

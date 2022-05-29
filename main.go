@@ -1,25 +1,20 @@
 package main
 
 import (
-	"flag"
 	"log"
+	"os"
 
 	"github.com/Bechma/newplaces/backend"
 	"github.com/go-redis/redis/v8"
 )
 
-var (
-	reset        = flag.Bool("reset", false, "Reset the canvas to all white")
-	redisAddress = flag.String("redis", "127.0.0.1:6379", "redis address")
-)
-
 func main() {
-	flag.Parse()
-	redisClient := redis.NewClient(&redis.Options{Addr: *redisAddress})
-	if *reset {
-		backend.ResetCanvas(redisClient)
-		return
+	redisAddress := os.Getenv("NEWPLACES_REDIS_ADDRESS")
+	if redisAddress == "" {
+		log.Fatal("You need to specify a redis address")
 	}
+	redisPassword := os.Getenv("NEWPLACES_REDIS_PASSWORD")
+	redisClient := redis.NewClient(&redis.Options{Addr: redisAddress, Password: redisPassword})
 	r, err := backend.SetupRouter(redisClient)
 	if err != nil {
 		log.Fatal(err.Error())

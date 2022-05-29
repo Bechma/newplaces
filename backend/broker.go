@@ -1,6 +1,10 @@
 package backend
 
-import "log"
+import (
+	"log"
+
+	"github.com/gin-gonic/gin"
+)
 
 type Broker struct {
 	stopCh    chan bool
@@ -29,7 +33,9 @@ func (b *Broker) Start() {
 		case msgCh := <-b.unsubCh:
 			delete(subs, msgCh)
 		case msg := <-b.publishCh:
-			log.Printf("Sending: %+v", msg)
+			if gin.Mode() != gin.ReleaseMode {
+				log.Printf("Sending: %+v", msg)
+			}
 			for msgCh := range subs {
 				// msgCh is buffered, use non-blocking send to protect the broker:
 				select {
